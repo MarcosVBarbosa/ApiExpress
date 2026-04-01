@@ -1,0 +1,24 @@
+// Essa função é usada para montar caminhos absolutos de forma segura,
+// garantindo compatibilidade entre diferentes sistemas operacionais
+// (Windows, Linux, macOS)
+const { resolve } = require('path');
+
+module.exports = {
+  // Caminho do arquivo de configuração do banco de dados
+  // O uso do "resolve" + "__dirname" garante que o caminho funcione
+  // corretamente em qualquer sistema operacional, evitando problemas
+  // com diferenças de barra (\ no Windows e / no Linux/macOS)
+  config: resolve(__dirname, 'src', 'config', 'database.js'),
+
+  // Define onde estão os Models (representação das tabelas em JS)
+  // Também usa "resolve" para garantir portabilidade entre ambientes
+  'models-path': resolve(__dirname, 'src', 'app', 'models'),
+
+  // Define onde estão as Migrations (criação/alteração de tabelas)
+  // Caminho absoluto evita erros ao rodar comandos do Sequelize CLI
+  'migrations-path': resolve(__dirname, 'src', 'database', 'migrations'),
+
+  // Define onde estão os Seeders (dados iniciais do banco)
+  // Mantém o projeto organizado e compatível em qualquer sistema
+  'seeders-path': resolve(__dirname, 'src', 'database', 'seeds'),
+};
