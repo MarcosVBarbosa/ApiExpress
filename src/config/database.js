@@ -1,12 +1,19 @@
-module.exports = {
+export default {
   dialect: 'postgres',
-  host: 'localhost',
+  host: 'dpg-d779kqua2pns73949c60-a.virginia-postgres.render.com',
+  port: 5432,
   username: 'root',
-  password: 'admin',
-  database: 'basic-painel',
+  password: 'viwwnWzZeDCz74x6roKfCbOk4vUyBvTF',
+  database: 'bdpostgres_stdh',
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false,
+    },
+  },
   define: {
-    timestamp: true, // ciras duas colunas: createAt e updateAt
-    underscored: true, // nomeclatura _ (não  camelCase) customersGroup => customers_group
+    timestamps: true,
+    underscored: true,
     underscoredAll: true,
   },
 };
