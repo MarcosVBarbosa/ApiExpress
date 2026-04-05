@@ -1,19 +1,29 @@
 import { Router } from 'express';
 import UsersController from './app/controllers/UsersController.js';
 import PermissionsUsersController from './app/controllers/PermissionsUsersController.js';
+import SessionsController from './app/controllers/SessionsController.js';
+import AuthMiddlware from './app/middleware/AuthMiddlware.js';
 
 const router = new Router();
 
-router.get('/Users', UsersController.index);
-router.get('/Users/:id', UsersController.show);
-router.post('/Users', UsersController.create);
-router.put('/Users/:id', UsersController.update);
-router.delete('/Users/:id', UsersController.destroy);
+// 🔓 Login
+router.post('/sessions', SessionsController.create);
 
-router.get('/PermissionsUsers', PermissionsUsersController.index);
-router.get('/PermissionsUsers/:id', PermissionsUsersController.show);
-router.post('/PermissionsUsers', PermissionsUsersController.create);
-router.put('/PermissionsUsers/:id', PermissionsUsersController.update);
-router.delete('/UsPermissionsUsersers/:id', PermissionsUsersController.destroy);
+// 🔒 Protege tudo abaixo
+router.use(AuthMiddlware);
+
+// 👤 Users
+router.get('/users', UsersController.index);
+router.get('/users/:id', UsersController.show);
+router.post('/users', UsersController.create);
+router.put('/users/:id', UsersController.update);
+router.delete('/users/:id', UsersController.destroy);
+
+// 🔐 Permissions
+router.get('/permissions-users', PermissionsUsersController.index);
+router.get('/permissions-users/:id', PermissionsUsersController.show);
+router.post('/permissions-users', PermissionsUsersController.create);
+router.put('/permissions-users/:id', PermissionsUsersController.update);
+router.delete('/permissions-users/:id', PermissionsUsersController.destroy);
 
 export default router;

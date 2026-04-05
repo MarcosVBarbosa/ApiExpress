@@ -1,5 +1,7 @@
 import express from 'express';
 import router from './router.js';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './config/Swagger.js';
 
 import './database/index.js';
 
@@ -15,6 +17,7 @@ class App {
   }
   router() {
     this.server.use(router);
+    this.server.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
   }
 }
 

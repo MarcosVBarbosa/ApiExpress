@@ -1,8 +1,36 @@
+import PermissionsUsersModel from '../models/PermissionsUsersModel.js';
 import UsersModel from '../models/UsersModel.js';
 import { Op } from 'sequelize';
+import * as Yup from 'yup';
+import bcrypt from 'bcrypt';
 
 class UsersController {
-  // 📄 LISTAR
+  /**
+   * @swagger
+   * /users:
+   *   get:
+   *     summary: Lista usuários
+   *     tags: [Users]
+   *     parameters:
+   *       - in: query
+   *         name: name
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: status
+   *         schema:
+   *           type: string
+   *           enum: ["true", "false"]
+   *       - in: query
+   *         name: permissions_user_id
+   *         schema:
+   *           type: integer
+   *       - in: query
+   *         name: includePermission
+   *         schema:
+   *           type: string
+   *           enum: ["true", "false"]
+   */
   async index(req, res) {
     try {
       const {
@@ -16,88 +44,128 @@ class UsersController {
         sort,
         page,
         limit,
+        includePermission,
       } = req.query;
 
       const where = {};
 
-      // 🔍 Filtro por nome
       if (name) {
         where.name = { [Op.iLike]: `%${name}%` };
       }
 
-      // 🔍 Status
+      const parseBoolean = (value) =>
+        ['true', '1', 'yes'].includes(String(value).toLowerCase());
+
       if (status !== undefined) {
-        where.status = status === 'true';
+        where.status = parseBoolean(status);
       }
 
-      // 🔍 FK
-      if (permissions_user_id) {
+      if (permissions_user_id && !isNaN(Number(permissions_user_id))) {
         where.permissions_user_id = Number(permissions_user_id);
       }
 
-      // 📅 Datas criação
+      const isValidDate = (date) => !isNaN(new Date(date).getTime());
+
       if (createdBefore || createdAfter) {
-        where.created_at = {};
-        if (createdBefore) {
-          where.created_at[Op.lte] = new Date(createdBefore);
+        where.createdAt = {};
+        if (createdBefore && isValidDate(createdBefore)) {
+          where.createdAt[Op.lte] = new Date(createdBefore);
         }
-        if (createdAfter) {
-          where.created_at[Op.gte] = new Date(createdAfter);
+        if (createdAfter && isValidDate(createdAfter)) {
+          where.createdAt[Op.gte] = new Date(createdAfter);
         }
       }
 
-      // 📅 Datas atualização
       if (updatedBefore || updatedAfter) {
-        where.updated_at = {};
-        if (updatedBefore) {
-          where.updated_at[Op.lte] = new Date(updatedBefore);
+        where.updatedAt = {};
+        if (updatedBefore && isValidDate(updatedBefore)) {
+          where.updatedAt[Op.lte] = new Date(updatedBefore);
         }
-        if (updatedAfter) {
-          where.updated_at[Op.gte] = new Date(updatedAfter);
+        if (updatedAfter && isValidDate(updatedAfter)) {
+          where.updatedAt[Op.gte] = new Date(updatedAfter);
         }
       }
 
-      // 🔃 Ordenação
       const order = [];
+      const allowedSortFields = ['name', 'createdAt', 'updatedAt', 'status'];
+
       if (sort) {
         const [field, direction] = sort.split(':');
-        order.push([field, direction?.toUpperCase() || 'ASC']);
+
+        if (allowedSortFields.includes(field)) {
+          order.push([
+            field,
+            direction?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC',
+          ]);
+        }
       }
 
-      const query = {
+      const include = [];
+
+      if (includePermission === 'true') {
+        include.push({
+          model: PermissionsUsersModel,
+          as: 'permissionUser',
+          attributes: ['id', 'name', 'permissions'],
+          required: false,
+        });
+      }
+
+      const pageNumber = Number(page) || 1;
+      const pageSize = Math.min(Number(limit) || 10, 100);
+
+      const { rows, count } = await UsersModel.findAndCountAll({
+        attributes: { exclude: ['password_hash'] },
         where,
         order,
-      };
-
-      // 📄 Paginação opcional
-      if (limit) {
-        query.limit = Number(limit);
-      }
-
-      if (page && limit) {
-        query.offset = (Number(page) - 1) * Number(limit);
-      }
-
-      // 🔢 Com total (melhor que findAll)
-      const { rows, count } = await UsersModel.findAndCountAll(query);
+        include,
+        distinct: true,
+        limit: pageSize,
+        offset: (pageNumber - 1) * pageSize,
+      });
 
       return res.json({
         data: rows,
         total: count,
-        page: page ? Number(page) : null,
-        limit: limit ? Number(limit) : null,
+        page: pageNumber,
+        limit: pageSize,
       });
     } catch (error) {
-      return res.status(500).json(error);
+      console.error(error);
+      return res.status(500).json({ error: 'Erro ao listar usuários' });
     }
   }
 
-  // 🔍 BUSCAR POR ID
+  /**
+   * @swagger
+   * /users/{id}:
+   *   get:
+   *     summary: Buscar usuário por ID
+   *     tags: [Users]
+   */
   async show(req, res) {
     try {
       const { id } = req.params;
+      const { includePermission } = req.query;
 
-      const user = await UsersModel.findByPk(id);
+      if (isNaN(Number(id))) {
+        return res.status(400).json({ error: 'ID inválido' });
+      }
+
+      const include = [];
+
+      if (includePermission === 'true') {
+        include.push({
+          model: PermissionsUsersModel,
+          as: 'permissionUser',
+          attributes: ['id', 'name', 'permissions'],
+        });
+      }
+
+      const user = await UsersModel.findByPk(id, {
+        include,
+        attributes: { exclude: ['password_hash'] },
+      });
 
       if (!user) {
         return res.status(404).json({ error: 'Usuário não encontrado' });
@@ -105,58 +173,132 @@ class UsersController {
 
       return res.json(user);
     } catch (error) {
-      return res.status(500).json(error);
+      console.error(error);
+      return res.status(500).json({ error: 'Erro ao buscar usuário' });
     }
   }
 
-  // ➕ CRIAR
+  /**
+   * @swagger
+   * /users:
+   *   post:
+   *     summary: Criar usuário
+   *     tags: [Users]
+   */
   async create(req, res) {
     try {
-      const { name, password_hash, status, permissions_user_id } = req.body;
-
-      const user = await UsersModel.create({
-        name,
-        password_hash,
-        status,
-        permissions_user_id,
+      const schema = Yup.object().shape({
+        name: Yup.string().required(),
+        password: Yup.string().required().min(8),
+        status: Yup.boolean(),
+        permissions_user_id: Yup.number().required(),
       });
 
-      return res.status(201).json(user);
+      await schema.validate(req.body, { abortEarly: false });
+
+      const password_hash = await bcrypt.hash(req.body.password, 8);
+
+      const user = await UsersModel.create({
+        name: req.body.name,
+        password_hash,
+        status: req.body.status ?? true,
+        permissions_user_id: req.body.permissions_user_id,
+      });
+
+      return res.status(201).json({
+        id: user.id,
+        name: user.name,
+        status: user.status,
+        permissions_user_id: user.permissions_user_id,
+      });
     } catch (error) {
-      return res.status(500).json(error);
+      if (error instanceof Yup.ValidationError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+
+      console.error(error);
+      return res.status(500).json({ error: 'Erro ao criar usuário' });
     }
   }
 
-  // ✏️ ATUALIZAR
+  /**
+   * @swagger
+   * /users/{id}:
+   *   put:
+   *     summary: Atualizar usuário
+   *     tags: [Users]
+   */
   async update(req, res) {
     try {
       const { id } = req.params;
 
+      if (isNaN(Number(id))) {
+        return res.status(400).json({ error: 'ID inválido' });
+      }
+
       const user = await UsersModel.findByPk(id);
 
       if (!user) {
         return res.status(404).json({ error: 'Usuário não encontrado' });
       }
 
-      const { name, password_hash, status, permissions_user_id } = req.body;
+      const { name, status, permissions_user_id, password } = req.body;
 
-      await user.update({
-        name,
-        password_hash,
-        status,
-        permissions_user_id,
+      const schema = Yup.object().shape({
+        name: Yup.string(),
+        status: Yup.boolean(),
+        permissions_user_id: Yup.number(),
+        password: Yup.string().min(8),
       });
 
-      return res.json(user);
+      await schema.validate(
+        { name, status, permissions_user_id, password },
+        { abortEarly: false }
+      );
+
+      const data = {};
+
+      if (name !== undefined) data.name = name;
+      if (status !== undefined) data.status = status;
+      if (permissions_user_id !== undefined)
+        data.permissions_user_id = permissions_user_id;
+
+      if (password) {
+        data.password_hash = await bcrypt.hash(password, 8);
+      }
+
+      await user.update(data);
+
+      return res.json({
+        id: user.id,
+        name: user.name,
+        status: user.status,
+        permissions_user_id: user.permissions_user_id,
+      });
     } catch (error) {
-      return res.status(500).json(error);
+      if (error instanceof Yup.ValidationError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+
+      console.error(error);
+      return res.status(500).json({ error: 'Erro ao atualizar usuário' });
     }
   }
 
-  // ❌ DELETAR
+  /**
+   * @swagger
+   * /users/{id}:
+   *   delete:
+   *     summary: Deletar usuário
+   *     tags: [Users]
+   */
   async destroy(req, res) {
     try {
       const { id } = req.params;
+
+      if (isNaN(Number(id))) {
+        return res.status(400).json({ error: 'ID inválido' });
+      }
 
       const user = await UsersModel.findByPk(id);
 
@@ -168,7 +310,8 @@ class UsersController {
 
       return res.status(204).send();
     } catch (error) {
-      return res.status(500).json(error);
+      console.error(error);
+      return res.status(500).json({ error: 'Erro ao deletar usuário' });
     }
   }
 }

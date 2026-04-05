@@ -7,7 +7,7 @@ class PermissionsUsersModel extends Model {
         name: Sequelize.STRING,
         description: Sequelize.STRING,
         permissions: Sequelize.JSONB,
-        status: true,
+        status: Sequelize.BOOLEAN,
       },
       {
         sequelize,
@@ -15,8 +15,11 @@ class PermissionsUsersModel extends Model {
       }
     );
   }
-  static associations(models) {
-    this.hasMany(models.Users);
+  static associate(models) {
+    this.hasMany(models.UsersModel, {
+      foreignKey: 'permissions_user_id',
+      as: 'users',
+    });
   }
 }
 
