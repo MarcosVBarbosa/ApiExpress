@@ -1,21 +1,25 @@
 import { Model, DataTypes } from 'sequelize';
 
-class PermissionsUsersModel extends Model {
+class RoleModel extends Model {
   static init(sequelize) {
     super.init(
       {
         name: {
           type: DataTypes.STRING,
           allowNull: false,
+          unique: true,
         },
+
         description: {
-          type: DataTypes.STRING,
+          type: DataTypes.TEXT,
           allowNull: true,
         },
+
         permissions: {
           type: DataTypes.JSONB,
           allowNull: false,
         },
+
         status: {
           type: DataTypes.BOOLEAN,
           defaultValue: true,
@@ -23,18 +27,17 @@ class PermissionsUsersModel extends Model {
       },
       {
         sequelize,
-        tableName: 'permissions_users',
+        tableName: 'roles',
       }
     );
   }
 
   static associate(models) {
-    // Associação 1:N com UsersModel
-    this.hasMany(models.UsersModel, {
-      foreignKey: 'permissions_user_id',
-      as: 'user',
+    this.hasMany(models.UserModel, {
+      foreignKey: 'role_id',
+      as: 'users',
     });
   }
 }
 
-export default PermissionsUsersModel;
+export default RoleModel;

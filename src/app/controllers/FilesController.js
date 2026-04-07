@@ -1,57 +1,35 @@
+import { Op } from 'sequelize';
 import FilesModel from '../models/FilesModel.js';
 
-//Utils
+// Utils
 import { DeleteFile } from '../utils/file/DeleteFile.js';
 
+function validateId(id) {
+  return !isNaN(Number(id));
+}
+
 class FilesController {
-  /**
-   * @swagger
-   * /files:
-   *   get:
-   *     summary: Lista arquivos
-   *     tags: [Files]
-   *     parameters:
-   *       - in: query
-   *         name: name
-   *         schema:
-   *           type: string
-   *       - in: query
-   *         name: status
-   *         schema:
-   *           type: string
-   *           enum: ["true", "false"]
-   *       - in: query
-   *         name: sort
-   *         schema:
-   *           type: string
-   *           example: name:ASC
-   *       - in: query
-   *         name: page
-   *         schema:
-   *           type: integer
-   *           default: 1
-   *       - in: query
-   *         name: limit
-   *         schema:
-   *           type: integer
-   *           default: 10
-   *           maximum: 100
-   */
   async index(req, res) {
     try {
       const { name, status, sort, page, limit } = req.query;
+
       const where = {};
 
-      if (name) where.name = { [FilesModel.sequelize.Op.iLike]: `%${name}%` };
-      if (status !== undefined)
+      if (name) where.name = { [Op.iLike]: `%${name}%` };
+
+      if (status !== undefined) {
         where.status = ['true', '1', 'yes'].includes(
           String(status).toLowerCase()
         );
+      }
+
+      const allowedFields = ['name', 'created_at', 'updated_at', 'status'];
 
       const order = [];
+
       if (sort) {
         const [field, direction] = sort.split(':');
-        const allowedFields = ['name', 'createdAt', 'updatedAt', 'status'];
+
         if (allowedFields.includes(field)) {
           order.push([
             field,
@@ -82,33 +60,19 @@ class FilesController {
     }
   }
 
-  /**
-   * @swagger
-   * /files/{id}:
-   *   get:
-   *     summary: Buscar arquivo por ID
-   *     tags: [Files]
-   *     parameters:
-   *       - in: path
-   *         name: id
-   *         required: true
-   *         schema:
-   *           type: integer
-   *     responses:
-   *       200:
-   *         description: Arquivo encontrado
-   *       404:
-   *         description: Arquivo não encontrado
-   */
   async show(req, res) {
     try {
       const { id } = req.params;
-      if (isNaN(Number(id)))
+
+      if (!validateId(id)) {
         return res.status(400).json({ error: 'ID inválido' });
+      }
 
       const file = await FilesModel.findByPk(id);
-      if (!file)
+
+      if (!file) {
         return res.status(404).json({ error: 'Arquivo não encontrado' });
+      }
 
       return res.json(file);
     } catch (error) {
@@ -117,31 +81,18 @@ class FilesController {
     }
   }
 
-  /**
-   * @swagger
-   * /files:
-   *   post:
-   *     summary: Criar/Enviar arquivo
-   *     tags: [Files]
-   *     requestBody:
-   *       required: true
-   *       content:
-   *         multipart/form-data:
-   *           schema:
-   *             type: object
-   *             properties:
-   *               file:
-   *                 type: string
-   *                 format: binary
-   */
   async create(req, res) {
     try {
-      if (!req.file)
+      if (!req.file) {
         return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+      }
 
       const file = await FilesModel.create({
         name: req.file.originalname,
-        path: req.file.filename,
+        key: req.file.filename, // 🔥 importante
+        path: req.file.path,
+        size: req.file.size,
+        mime_type: req.file.mimetype,
         status: true,
       });
 
@@ -152,44 +103,27 @@ class FilesController {
     }
   }
 
-  /**
-   * @swagger
-   * /files/{id}:
-   *   put:
-   *     summary: Atualizar arquivo
-   *     tags: [Files]
-   *     parameters:
-   *       - in: path
-   *         name: id
-   *         required: true
-   *         schema:
-   *           type: integer
-   *     requestBody:
-   *       content:
-   *         application/json:
-   *           schema:
-   *             type: object
-   *             properties:
-   *               name:
-   *                 type: string
-   *               status:
-   *                 type: boolean
-   */
   async update(req, res) {
     try {
       const { id } = req.params;
-      if (isNaN(Number(id)))
+
+      if (!validateId(id)) {
         return res.status(400).json({ error: 'ID inválido' });
+      }
 
       const file = await FilesModel.findByPk(id);
-      if (!file)
+
+      if (!file) {
         return res.status(404).json({ error: 'Arquivo não encontrado' });
+      }
 
       const { name, status } = req.body;
+
       if (name !== undefined) file.name = name;
       if (status !== undefined) file.status = status;
 
       await file.save();
+
       return res.json(file);
     } catch (error) {
       console.error(error);
@@ -197,60 +131,29 @@ class FilesController {
     }
   }
 
-  /**
-   * @swagger
-   * /files/{id}:
-   *   delete:
-   *     summary: Deletar arquivo
-   *     description: >
-   *       Remove o registro do arquivo no banco de dados e, após sucesso,
-   *       tenta deletar o arquivo físico do disco com base no nome e na data de criação (created_at).
-   *       Caso o arquivo físico não exista, a operação não falha.
-   *     tags: [Files]
-   *     parameters:
-   *       - in: path
-   *         name: id
-   *         required: true
-   *         description: ID do arquivo a ser deletado
-   *         schema:
-   *           type: integer
-   *     responses:
-   *       204:
-   *         description: Arquivo deletado com sucesso (sem conteúdo)
-   *       404:
-   *         description: Arquivo não encontrado
-   *         content:
-   *           application/json:
-   *             schema:
-   *               type: object
-   *               properties:
-   *                 error:
-   *                   type: string
-   *                   example: Arquivo não encontrado
-   *       500:
-   *         description: Erro interno ao deletar arquivo
-   *         content:
-   *           application/json:
-   *             schema:
-   *               type: object
-   *               properties:
-   *                 error:
-   *                   type: string
-   *                   example: Erro ao deletar arquivo
-   */
   async destroy(req, res) {
     try {
       const { id } = req.params;
+
+      if (!validateId(id)) {
+        return res.status(400).json({ error: 'ID inválido' });
+      }
+
       const file = await FilesModel.findByPk(id);
 
-      if (!file)
+      if (!file) {
         return res.status(404).json({ error: 'Arquivo não encontrado' });
+      }
 
-      // Deleta do banco primeiro
+      // Remove do banco
       await file.destroy();
 
-      // Depois tenta deletar o arquivo físico
-      await DeleteFile(file);
+      // Remove do storage (não quebra se falhar)
+      try {
+        await DeleteFile(file);
+      } catch (err) {
+        console.warn('Erro ao deletar arquivo físico:', err.message);
+      }
 
       return res.status(204).send();
     } catch (error) {

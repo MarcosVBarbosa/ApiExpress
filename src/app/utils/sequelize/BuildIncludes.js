@@ -1,4 +1,4 @@
-import PermissionsUsersModel from '../../models/PermissionsUsersModel.js';
+import PermissionsUsersModel from '../../models/RolesModel.js';
 import FilesModel from '../../models/UsersModel.js';
 
 /**

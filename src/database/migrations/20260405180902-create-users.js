@@ -9,33 +9,26 @@ export default {
       },
 
       name: {
+        type: Sequelize.STRING(50),
+        allowNull: false,
+      },
+
+      username: {
         type: Sequelize.STRING,
         allowNull: false,
         unique: true,
       },
 
       password_hash: {
-        type: Sequelize.STRING,
+        type: Sequelize.STRING(255),
         allowNull: false,
       },
 
-      created_at: {
-        type: Sequelize.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.NOW,
-      },
-
-      updated_at: {
-        type: Sequelize.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.NOW,
-      },
-
-      permissions_user_id: {
+      role_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'permissions_users',
+          model: 'roles',
           key: 'id',
         },
         onUpdate: 'CASCADE',
@@ -58,7 +51,22 @@ export default {
         allowNull: false,
         defaultValue: true,
       },
+
+      created_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW,
+      },
+
+      updated_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW,
+      },
     });
+
+    await queryInterface.addIndex('users', ['role_id']);
+    await queryInterface.addIndex('users', ['file_id']);
   },
 
   async down(queryInterface) {

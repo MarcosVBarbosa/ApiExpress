@@ -1,7 +1,8 @@
 import express from 'express';
-import router from './router.js';
+import router from './routes.js';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/Swagger.js';
+import cookieParser from 'cookie-parser';
 
 import './database/index.js';
 
@@ -10,6 +11,7 @@ class App {
     this.server = express();
     this.middlewares();
     this.router();
+    this.server.use(cookieParser());
   }
 
   middlewares() {

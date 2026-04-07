@@ -1,14 +1,19 @@
 import { Op } from 'sequelize';
 import * as Yup from 'yup';
 
-//Models
-import PermissionsUsersModel from '../models/PermissionsUsersModel.js';
+// Models
+import RoleModel from '../models/RolesModel.js';
 
 // Utils
 import { ParseBoolean } from '../utils/parsers/ParseBoolean.js';
 import { ParseDateRange } from '../utils/parsers/ParseDateRange.js';
 
-class PermissionsUsersController {
+function validateId(id) {
+  return !isNaN(Number(id));
+}
+
+class RolesController {
+  // Listar roles
   async index(req, res) {
     try {
       const {
@@ -25,37 +30,41 @@ class PermissionsUsersController {
       } = req.query;
 
       const where = {};
+
       if (name) where.name = { [Op.iLike]: `%${name}%` };
       if (description) where.description = { [Op.iLike]: `%${description}%` };
       if (status !== undefined) where.status = ParseBoolean(status);
 
       const createdRange = ParseDateRange(createdBefore, createdAfter);
-      if (createdRange) where.createdAt = createdRange;
+      if (createdRange) where.created_at = createdRange;
 
       const updatedRange = ParseDateRange(updatedBefore, updatedAfter);
-      if (updatedRange) where.updatedAt = updatedRange;
+      if (updatedRange) where.updated_at = updatedRange;
 
       const allowedSortFields = [
         'name',
         'description',
-        'createdAt',
-        'updatedAt',
+        'created_at',
+        'updated_at',
         'status',
       ];
+
       const order = [];
+
       if (sort) {
         const [field, direction] = sort.split(':');
-        if (allowedSortFields.includes(field))
+        if (allowedSortFields.includes(field)) {
           order.push([
             field,
             direction?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC',
           ]);
+        }
       }
 
       const pageNumber = Number(page) || 1;
       const pageSize = Math.min(Number(limit) || 10, 100);
 
-      const { rows, count } = await PermissionsUsersModel.findAndCountAll({
+      const { rows, count } = await RoleModel.findAndCountAll({
         where,
         order,
         distinct: true,
@@ -71,102 +80,136 @@ class PermissionsUsersController {
       });
     } catch (error) {
       console.error(error);
-      return res.status(500).json({ error: 'Erro ao listar permissões' });
+      return res.status(500).json({ error: 'Erro ao listar roles' });
     }
   }
 
+  // Buscar role por ID
   async show(req, res) {
     try {
       const { id } = req.params;
-      if (isNaN(Number(id)))
+
+      if (!validateId(id))
         return res.status(400).json({ error: 'ID inválido' });
 
-      const data = await PermissionsUsersModel.findByPk(id);
-      if (!data)
-        return res.status(404).json({ error: 'Permissão não encontrada' });
+      const role = await RoleModel.findByPk(id);
 
-      return res.json(data);
+      if (!role) return res.status(404).json({ error: 'Role não encontrada' });
+
+      return res.json(role);
     } catch (error) {
       console.error(error);
-      return res.status(500).json({ error: 'Erro ao buscar permissão' });
+      return res.status(500).json({ error: 'Erro ao buscar role' });
     }
   }
 
+  // Criar role
   async create(req, res) {
     try {
       const schema = Yup.object().shape({
         name: Yup.string().required(),
         description: Yup.string().required(),
-        status: Yup.boolean(),
         permissions: Yup.object().required(),
+        status: Yup.boolean(),
       });
 
       await schema.validate(req.body, { abortEarly: false });
 
       const { name, description, permissions, status } = req.body;
 
-      const data = await PermissionsUsersModel.create({
+      const roleExists = await RoleModel.findOne({
+        where: { name },
+      });
+
+      if (roleExists) {
+        return res.status(400).json({ error: 'Role já existe' });
+      }
+
+      const role = await RoleModel.create({
         name,
         description,
         permissions,
         status: status ?? true,
       });
 
-      return res.status(201).json(data);
+      return res.status(201).json(role);
     } catch (error) {
-      if (error instanceof Yup.ValidationError)
+      if (error instanceof Yup.ValidationError) {
         return res.status(400).json({ errors: error.errors });
+      }
+
       console.error(error);
-      return res.status(500).json({ error: 'Erro ao criar permissão' });
+      return res.status(500).json({ error: 'Erro ao criar role' });
     }
   }
 
+  // Atualizar role
   async update(req, res) {
     try {
       const { id } = req.params;
-      if (isNaN(Number(id)))
+
+      if (!validateId(id))
         return res.status(400).json({ error: 'ID inválido' });
 
-      const data = await PermissionsUsersModel.findByPk(id);
-      if (!data)
-        return res.status(404).json({ error: 'Permissão não encontrada' });
+      const role = await RoleModel.findByPk(id);
+
+      if (!role) return res.status(404).json({ error: 'Role não encontrada' });
 
       const schema = Yup.object().shape({
         name: Yup.string(),
         description: Yup.string(),
-        status: Yup.boolean(),
         permissions: Yup.object(),
+        status: Yup.boolean(),
       });
 
       await schema.validate(req.body, { abortEarly: false });
 
-      await data.update({ ...req.body });
-      return res.json(data);
+      if (req.body.name) {
+        const roleExists = await RoleModel.findOne({
+          where: {
+            name: req.body.name,
+            id: { [Op.ne]: id },
+          },
+        });
+
+        if (roleExists) {
+          return res.status(400).json({ error: 'Role já existe' });
+        }
+      }
+
+      await role.update({ ...req.body });
+
+      return res.json(role);
     } catch (error) {
-      if (error instanceof Yup.ValidationError)
+      if (error instanceof Yup.ValidationError) {
         return res.status(400).json({ errors: error.errors });
+      }
+
       console.error(error);
-      return res.status(500).json({ error: 'Erro ao atualizar permissão' });
+      return res.status(500).json({ error: 'Erro ao atualizar role' });
     }
   }
 
+  // Deletar role
   async destroy(req, res) {
     try {
       const { id } = req.params;
-      if (isNaN(Number(id)))
+
+      if (!validateId(id))
         return res.status(400).json({ error: 'ID inválido' });
 
-      const data = await PermissionsUsersModel.findByPk(id);
-      if (!data)
-        return res.status(404).json({ error: 'Permissão não encontrada' });
+      const role = await RoleModel.findByPk(id);
 
-      await data.destroy();
+      if (!role) return res.status(404).json({ error: 'Role não encontrada' });
+
+      await role.destroy();
+
       return res.status(204).send();
     } catch (error) {
       console.error(error);
-      return res.status(500).json({ error: 'Erro ao deletar permissão' });
+      return res.status(500).json({ error: 'Erro ao deletar role' });
     }
   }
 }
 
-export default new PermissionsUsersController();
+export default new RolesController();

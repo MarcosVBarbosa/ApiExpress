@@ -1,7 +1,7 @@
 import { Model, DataTypes } from 'sequelize';
 import bcrypt from 'bcrypt';
 
-class UsersModel extends Model {
+class UserModel extends Model {
   static init(sequelize) {
     super.init(
       {
@@ -9,18 +9,28 @@ class UsersModel extends Model {
           type: DataTypes.STRING,
           allowNull: false,
         },
+
+        username: {
+          type: DataTypes.STRING,
+          allowNull: false,
+          unique: true,
+        },
+
         password_hash: {
           type: DataTypes.STRING,
           allowNull: false,
         },
-        permissions_user_id: {
+
+        role_id: {
           type: DataTypes.INTEGER,
           allowNull: false,
         },
+
         file_id: {
           type: DataTypes.INTEGER,
           allowNull: true,
         },
+
         status: {
           type: DataTypes.BOOLEAN,
           defaultValue: true,
@@ -29,9 +39,11 @@ class UsersModel extends Model {
       {
         sequelize,
         tableName: 'users',
+
         defaultScope: {
           attributes: { exclude: ['password_hash'] },
         },
+
         scopes: {
           withPassword: {
             attributes: { include: ['password_hash'] },
@@ -42,13 +54,13 @@ class UsersModel extends Model {
   }
 
   static associate(models) {
-    // Associação com PermissionsUsersModel (1 usuário pertence a 1 permissão)
-    this.belongsTo(models.PermissionsUsersModel, {
-      foreignKey: 'permissions_user_id',
-      as: 'permissionUser',
+    // User pertence a Role
+    this.belongsTo(models.RoleModel, {
+      foreignKey: 'role_id',
+      as: 'role',
     });
 
-    // Associação com FilesModel (1 usuário pertence a 1 arquivo)
+    // User pertence a File
     this.belongsTo(models.FilesModel, {
       foreignKey: 'file_id',
       as: 'file',
@@ -61,4 +73,4 @@ class UsersModel extends Model {
   }
 }
 
-export default UsersModel;
+export default UserModel;

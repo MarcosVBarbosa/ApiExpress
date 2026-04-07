@@ -1,6 +1,6 @@
 export default {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('files', {
+    await queryInterface.createTable('refresh_tokens', {
       id: {
         type: Sequelize.INTEGER,
         allowNull: false,
@@ -8,36 +8,31 @@ export default {
         primaryKey: true,
       },
 
-      name: {
-        type: Sequelize.STRING,
-        allowNull: false,
-      },
-
-      key: {
-        type: Sequelize.STRING,
+      refresh_token: {
+        type: Sequelize.STRING(255),
         allowNull: false,
         unique: true,
       },
 
-      path: {
-        type: Sequelize.STRING,
+      expires_at: {
+        type: Sequelize.DATE,
         allowNull: false,
       },
 
-      size: {
+      user_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
+        references: {
+          model: 'users',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
       },
 
-      mime_type: {
-        type: Sequelize.STRING,
-        allowNull: false,
-      },
-
-      status: {
-        type: Sequelize.BOOLEAN,
-        allowNull: false,
-        defaultValue: true,
+      revoked_at: {
+        type: Sequelize.DATE,
+        allowNull: true,
       },
 
       created_at: {
@@ -53,10 +48,14 @@ export default {
       },
     });
 
-    await queryInterface.addIndex('files', ['key']);
+    await queryInterface.addIndex('refresh_tokens', ['user_id']);
+    await queryInterface.addIndex('refresh_tokens', [
+      'user_id',
+      'refresh_token',
+    ]);
   },
 
   async down(queryInterface) {
-    await queryInterface.dropTable('files');
+    await queryInterface.dropTable('refresh_tokens');
   },
 };

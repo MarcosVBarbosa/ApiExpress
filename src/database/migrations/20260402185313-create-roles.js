@@ -1,6 +1,6 @@
 export default {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('permissions_users', {
+    await queryInterface.createTable('roles', {
       id: {
         type: Sequelize.INTEGER,
         allowNull: false,
@@ -24,6 +24,12 @@ export default {
         allowNull: false,
       },
 
+      status: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+      },
+
       created_at: {
         type: Sequelize.DATE,
         allowNull: false,
@@ -35,16 +41,10 @@ export default {
         allowNull: false,
         defaultValue: Sequelize.NOW,
       },
-
-      status: {
-        type: Sequelize.BOOLEAN,
-        allowNull: false,
-        defaultValue: true,
-      },
     });
   },
 
   async down(queryInterface) {
-    await queryInterface.dropTable('permissions_users');
+    await queryInterface.dropTable('roles');
   },
 };
