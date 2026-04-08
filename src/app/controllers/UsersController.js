@@ -102,7 +102,9 @@ class UsersController {
       });
     } catch (error) {
       console.error(error);
-      return res.status(500).json({ error: 'Erro ao listar usuários' });
+      return res
+        .status(500)
+        .json({ error: 'Erro ao listar usuários', err: error });
     }
   }
 
