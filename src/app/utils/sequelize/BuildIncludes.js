@@ -1,4 +1,4 @@
-import PermissionsUsersModel from '../../models/RolesModel.js';
+import RolesModel from '../../models/RolesModel.js';
 import FilesModel from '../../models/UsersModel.js';
 
 /**
@@ -8,9 +8,9 @@ import FilesModel from '../../models/UsersModel.js';
  */
 export function BuildIncludes(includelist) {
   const includeOptions = {
-    permissions: {
-      model: PermissionsUsersModel,
-      as: 'permissionUser',
+    roles: {
+      model: RolesModel,
+      as: 'roles',
       attributes: ['id', 'name', 'permissions'],
       required: false,
     },
