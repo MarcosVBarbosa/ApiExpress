@@ -55,9 +55,9 @@ class UserModel extends Model {
 
   static associate(models) {
     // User pertence a Role
-    this.belongsTo(models.RoleModel, {
+    this.belongsTo(models.RolesModel, {
       foreignKey: 'role_id',
-      as: 'role',
+      as: 'roles',
     });
 
     // User pertence a File

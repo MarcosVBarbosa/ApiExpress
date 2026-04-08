@@ -1,6 +1,6 @@
 import { Model, DataTypes } from 'sequelize';
 
-class RoleModel extends Model {
+class RolesModel extends Model {
   static init(sequelize) {
     super.init(
       {
@@ -40,4 +40,4 @@ class RoleModel extends Model {
   }
 }
 
-export default RoleModel;
+export default RolesModel;

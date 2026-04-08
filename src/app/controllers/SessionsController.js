@@ -39,7 +39,7 @@ class SessionsController {
 
       const user = await UsersModel.scope('withPassword').findOne({
         where: { username: normalizedUsername },
-        include: ['role'],
+        include: ['roles'],
       });
 
       if (!user || !(await user.checkPassword(password))) {

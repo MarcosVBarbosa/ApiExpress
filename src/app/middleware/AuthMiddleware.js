@@ -29,7 +29,7 @@ export default async function AuthMiddleware(req, res, next) {
 
     // 🔥 busca usuário (já com role)
     const user = await UserModel.findByPk(decoded.id, {
-      include: ['role'],
+      include: ['roles'],
     });
 
     if (!user) {

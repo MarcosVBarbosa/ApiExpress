@@ -2,7 +2,7 @@ import { Op } from 'sequelize';
 import * as Yup from 'yup';
 
 // Models
-import RoleModel from '../models/RolesModel.js';
+import RolesModel from '../models/RolesModel.js';
 
 // Utils
 import { ParseBoolean } from '../utils/parsers/ParseBoolean.js';
@@ -64,7 +64,7 @@ class RolesController {
       const pageNumber = Number(page) || 1;
       const pageSize = Math.min(Number(limit) || 10, 100);
 
-      const { rows, count } = await RoleModel.findAndCountAll({
+      const { rows, count } = await RolesModel.findAndCountAll({
         where,
         order,
         distinct: true,
@@ -92,14 +92,14 @@ class RolesController {
       if (!validateId(id))
         return res.status(400).json({ error: 'ID inválido' });
 
-      const role = await RoleModel.findByPk(id);
+      const role = await RolesModel.findByPk(id);
 
       if (!role) return res.status(404).json({ error: 'Role não encontrada' });
 
       return res.json(role);
     } catch (error) {
       console.error(error);
-      return res.status(500).json({ error: 'Erro ao buscar role' });
+      return res.status(500).json({ error: 'Erro ao buscar roles' });
     }
   }
 
@@ -117,7 +117,7 @@ class RolesController {
 
       const { name, description, permissions, status } = req.body;
 
-      const roleExists = await RoleModel.findOne({
+      const roleExists = await RolesModel.findOne({
         where: { name },
       });
 
@@ -125,7 +125,7 @@ class RolesController {
         return res.status(400).json({ error: 'Role já existe' });
       }
 
-      const role = await RoleModel.create({
+      const role = await RolesModel.create({
         name,
         description,
         permissions,
@@ -139,7 +139,7 @@ class RolesController {
       }
 
       console.error(error);
-      return res.status(500).json({ error: 'Erro ao criar role' });
+      return res.status(500).json({ error: 'Erro ao criar roles' });
     }
   }
 
@@ -151,7 +151,7 @@ class RolesController {
       if (!validateId(id))
         return res.status(400).json({ error: 'ID inválido' });
 
-      const role = await RoleModel.findByPk(id);
+      const role = await RolesModel.findByPk(id);
 
       if (!role) return res.status(404).json({ error: 'Role não encontrada' });
 
@@ -165,7 +165,7 @@ class RolesController {
       await schema.validate(req.body, { abortEarly: false });
 
       if (req.body.name) {
-        const roleExists = await RoleModel.findOne({
+        const roleExists = await RolesModel.findOne({
           where: {
             name: req.body.name,
             id: { [Op.ne]: id },
@@ -186,7 +186,7 @@ class RolesController {
       }
 
       console.error(error);
-      return res.status(500).json({ error: 'Erro ao atualizar role' });
+      return res.status(500).json({ error: 'Erro ao atualizar roles' });
     }
   }
 
@@ -198,7 +198,7 @@ class RolesController {
       if (!validateId(id))
         return res.status(400).json({ error: 'ID inválido' });
 
-      const role = await RoleModel.findByPk(id);
+      const role = await RolesModel.findByPk(id);
 
       if (!role) return res.status(404).json({ error: 'Role não encontrada' });
 
@@ -207,7 +207,7 @@ class RolesController {
       return res.status(204).send();
     } catch (error) {
       console.error(error);
-      return res.status(500).json({ error: 'Erro ao deletar role' });
+      return res.status(500).json({ error: 'Erro ao deletar roles' });
     }
   }
 }
