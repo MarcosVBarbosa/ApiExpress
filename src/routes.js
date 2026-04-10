@@ -30,6 +30,7 @@ router.get('/users', can('users', 'read'), UsersController.index);
 router.get('/users/:id', can('users', 'read'), UsersController.show);
 router.post('/users', can('users', 'create'), UsersController.create);
 router.put('/users/:id', can('users', 'update'), UsersController.update);
+router.put('/Users/:id/password', UsersController.updatePassword);
 router.delete('/users/:id', can('users', 'delete'), UsersController.destroy);
 
 // 🔐 Roles

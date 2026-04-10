@@ -233,7 +233,6 @@ class UsersController {
         status: Yup.boolean(),
         role_id: Yup.number(),
         file_id: Yup.number(),
-        password: Yup.string().min(8),
       });
 
       await schema.validate(req.body, { abortEarly: false });
@@ -255,11 +254,6 @@ class UsersController {
         }
       }
 
-      if (data.password) {
-        data.password_hash = await bcrypt.hash(data.password, 8);
-        delete data.password;
-      }
-
       await user.update(data);
 
       return res.json(sanitizeUser(user));
@@ -270,6 +264,41 @@ class UsersController {
 
       console.error(error);
       return res.status(500).json({ error: 'Erro ao atualizar usuário' });
+    }
+  }
+
+  async updatePassword(req, res) {
+    try {
+      const { id } = req.params;
+
+      if (!validateId(id))
+        return res.status(400).json({ error: 'ID inválido' });
+
+      const user = await UsersModel.findByPk(id);
+
+      if (!user)
+        return res.status(404).json({ error: 'Usuário não encontrado' });
+
+      const schema = Yup.object().shape({
+        password: Yup.string().min(8).required(),
+      });
+
+      await schema.validate(req.body, { abortEarly: false });
+
+      const { password } = req.body;
+
+      const password_hash = await bcrypt.hash(password, 8);
+
+      await user.update({ password_hash });
+
+      return res.json({ message: 'Senha atualizada com sucesso' });
+    } catch (error) {
+      if (error instanceof Yup.ValidationError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+
+      console.error(error);
+      return res.status(500).json({ error: 'Erro ao atualizar senha' });
     }
   }
 
