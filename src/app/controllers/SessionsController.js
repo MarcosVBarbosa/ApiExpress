@@ -72,12 +72,6 @@ class SessionsController {
       });
 
       // 🍪 salva em cookie httpOnly
-      // res.cookie('refresh_token', refreshToken, {
-      //   httpOnly: true,
-      //   secure: true,
-      //   sameSite: 'strict',
-      // });
-
       res.cookie('refresh_token', refreshToken, {
         httpOnly: true,
         secure: true, // obrigatório (HTTPS)
