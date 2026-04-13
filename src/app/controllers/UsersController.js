@@ -34,7 +34,7 @@ function sanitizeUser(user) {
     result.roles = {
       id: rawUser.roles.id,
       name: rawUser.roles.name,
-      permissions: rawUser.roles.permissions,
+      crud: rawUser.roles.crud,
       description: rawUser.roles.description,
       status: rawUser.roles.status,
     };

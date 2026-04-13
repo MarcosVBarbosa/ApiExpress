@@ -109,13 +109,13 @@ class RolesController {
       const schema = Yup.object().shape({
         name: Yup.string().required(),
         description: Yup.string().required(),
-        permissions: Yup.object().required(),
+        crud: Yup.object().required(),
         status: Yup.boolean(),
       });
 
       await schema.validate(req.body, { abortEarly: false });
 
-      const { name, description, permissions, status } = req.body;
+      const { name, description, crud, status } = req.body;
 
       const roleExists = await RolesModel.findOne({
         where: { name },
@@ -128,7 +128,7 @@ class RolesController {
       const role = await RolesModel.create({
         name,
         description,
-        permissions,
+        crud,
         status: status ?? true,
       });
 
@@ -158,7 +158,7 @@ class RolesController {
       const schema = Yup.object().shape({
         name: Yup.string(),
         description: Yup.string(),
-        permissions: Yup.object(),
+        crud: Yup.object(),
         status: Yup.boolean(),
       });
 

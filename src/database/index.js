@@ -3,11 +3,11 @@ import dataBaseConfig from '../config/database.js';
 
 //Controllers
 import User from '../app/models/UsersModel.js';
-import PermissionsUsers from '../app/models/RolesModel.js';
+import RolesUsers from '../app/models/RolesModel.js';
 import Files from '../app/models/FilesModel.js';
 import RefreshTokenModel from '../app/models/RefreshTokenModel.js';
 
-const models = [User, PermissionsUsers, Files, RefreshTokenModel];
+const models = [User, RolesUsers, Files, RefreshTokenModel];
 
 class Database {
   constructor() {

@@ -19,7 +19,7 @@ export default {
         allowNull: false,
       },
 
-      permissions: {
+      crud: {
         type: Sequelize.JSONB,
         allowNull: false,
       },

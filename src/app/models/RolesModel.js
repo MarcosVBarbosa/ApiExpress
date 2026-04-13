@@ -15,7 +15,7 @@ class RolesModel extends Model {
           allowNull: true,
         },
 
-        permissions: {
+        crud: {
           type: DataTypes.JSONB,
           allowNull: false,
         },

@@ -46,9 +46,19 @@ class SessionsController {
         registerFail(normalizedUsername);
         await new Promise((r) => setTimeout(r, 300));
 
-        return res.status(401).json({
-          error: 'Usuário ou senha inválidos',
-        });
+        if (!user.status) {
+          return res.status(401).json({
+            error: 'Usuário ou senha inválidos ou usuário inativo',
+          });
+        }
+      }
+
+      if (!user.status) {
+        if (!user.status) {
+          return res.status(401).json({
+            error: 'Usuário ou senha inválidos ou usuário inativo',
+          });
+        }
       }
 
       resetAttempts(normalizedUsername);

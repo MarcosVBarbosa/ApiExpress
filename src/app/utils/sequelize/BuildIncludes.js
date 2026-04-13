@@ -10,7 +10,7 @@ export function BuildIncludes(includelist) {
     role: {
       model: RolesModel,
       as: 'roles',
-      attributes: ['id', 'name', 'permissions', 'description', 'status'],
+      attributes: ['id', 'name', 'crud', 'description', 'status'],
       required: false,
     },
     file: {
